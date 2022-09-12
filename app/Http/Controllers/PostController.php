@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
@@ -39,6 +40,41 @@ class PostController extends Controller
         ]);
 
         //redirect to index
-        return redirect()->route('posts.index')->with(['success' => 'Data berjasi ditambahkan!']);
+        return redirect()->route('posts.index')->with(['success' => 'Data berhasil ditambahkan!']);
+    }
+
+    public function edit(Post $post)
+    {
+        return view('posts.edit', compact('post'));
+    }
+
+    public function update(Request $request, Post $post)
+    {
+        $this->validate($request, [
+            'image'     => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'title'     => 'required|min:5',
+            'content'   => 'required|min:10'
+        ]);
+
+        if ($request->hasFile('image')) {
+
+            //Upload Image
+            $image = $request->file('image');
+            $image->storeAs('public/posts', $image->hashName());
+
+            Storage::delete('public/posts/' . $post->image);
+
+            $post->update([
+                'image' => $image->hashName(),
+                'title' => $request->title,
+                'content' => $request->content,
+            ]);
+        } else {
+            $post->update([
+                'title' => $request->title,
+                'content' => $request->content,
+            ]);
+        }
+        return redirect()->route('posts.index')->with(['success' => 'Data berhasil diubah!']);
     }
 }
